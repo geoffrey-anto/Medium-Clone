@@ -1,13 +1,13 @@
 import {
-    createCurrentUserHook,
+    // createCurrentUserHook,
     createClient,
 } from 'next-sanity';
 import createImageUrlBuilder from '@sanity/image-url'
 
 export const config = {
-    dataset: process.env.NEXT_SANITY_DATASET || 'production',
-    projectId: process.env.NEXT_SANITY_PROJECT_ID || 'sadas',
-    apiVersion: process.env.NEXT_SANITY_API_VERSION || 'v1',
+    dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
+    projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'hkvzxpf1',
+    apiVersion: process.env.NEXT_PUBLIC_SANITY_API_VERSION || '1',
     useCdn: process.env.NODE_ENV === 'production',
 };
 

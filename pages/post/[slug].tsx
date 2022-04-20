@@ -1,15 +1,56 @@
 import { GetStaticProps } from 'next'
+import Details from '../../components/Details'
 import Header from '../../components/Header'
 import { sanityClient, urlFor } from '../../sanity'
-import { Post } from '../../typings'
-import PortableText from 'react-portable-text'
+import { Post } from '../../types'
+import { useForm, SubmitHandler } from 'react-hook-form'
+import { useState } from 'react'
+import Comments from '../../components/Comments'
 
 interface Props {
   post: Post
 }
 
-const Post = ({ post }: Props) => {
-  console.log(post)
+interface IFormInput {
+  _id: string
+  name: string
+  email: string
+  comment: string
+}
+
+const Submitted_Component = () => {
+  return (
+    <div className='flex flex-col p-10 my-10 bg-yellow-500 text-white max-w-2xl mx-auto'>
+      <h3 className='text-3xl font-bold'>Thank you for submitting your comment!</h3>
+      <p>Once ithas been approved, it will appear shortly</p>
+    </div>
+  );
+};
+
+const Posts = ({ post }: Props) => {
+  const [submitted, setSubmitted] = useState(false)
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<IFormInput>()
+
+  const onSubmit: SubmitHandler<IFormInput> = async (data) => {
+    fetch('/api/createComment', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+      .then(() => {
+        console.log('Comment created')
+        setSubmitted(true)
+      })
+      .catch((err) => {
+        console.log(err)
+        setSubmitted(false)
+      })
+  }
+
   return (
     <main>
       <Header />
@@ -17,51 +58,76 @@ const Post = ({ post }: Props) => {
         className="h-40 w-full object-cover"
         src={urlFor(post.mainImage).url()!}
       />
-      <article className="mx-auto max-w-3xl">
-        <h1 className="mt-10 mb-3 text-3xl">{post.title}</h1>
-        <h2 className="mb-20 text-xl font-light text-gray-500">
-          {post.description}
-        </h2>
-        <div className="flex items-center space-x-2">
-          <img
-            className="h-10 w-10 rounded-full"
-            src={urlFor(post.author.image).url()!}
+      <Details post={post} />
+      <hr className=" mx-auto mt-10 max-w-3xl border border-yellow-500" />
+
+      {submitted ? (
+        <Submitted_Component/>
+      ) : (
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="mx-auto mb-10 mt-10 flex max-w-4xl flex-col p-5"
+        >
+          <h3 className="text-sm text-yellow-500">Enjoyed the article?</h3>
+          <h4 className="text-3xl font-bold">Leave a comment bellow!</h4>
+          <hr className="mt-2 py-3" />
+
+          <input
+            {...register('_id')}
+            type="hidden"
+            name="_id"
+            value={post._id}
           />
-          <p className="text-sm font-extralight">
-            Post by <span className="text-green-600">{post.author.name}</span> -
-            Published at {new Date(post._createdAt).toLocaleString()}
-          </p>
-        </div>
-        <div>
-          <PortableText
-            className=""
-            dataset={process.env.NEXT_SANITY_DATASET!}
-            projectId={process.env.NEXT_SANITY_PROJECT_ID!}
-            content={post.body}
-            serializers={{
-              h1: (props: any) => (
-                <h1 className="my-5 text-2xl font-bold" {...props} />
-              ),
-              h2: (props: any) => (
-                <h2 className="my-5 text-xl font-bold" {...props} />
-              ),
-              li: ({ childern }: any) => (
-                <li className="ml-4 list-disc">{childern}</li>
-              ),
-              link: ({ href, childern }: any) => (
-                <a href={href} className="text-blue-500 hover:underline">
-                  {childern}
-                </a>
-              ),
-            }}
+
+          <label className="mb-5 block">
+            <span className="text-gray-700">Name</span>
+            <input
+              {...register('name', { required: true })}
+              className="roudned form-input mt-1 block w-full border py-2 px-3 shadow outline-none ring-yellow-500 focus:ring"
+              placeholder="John Appleseed"
+              type="text"
+            />
+          </label>
+          <label className="mb-5 block">
+            <span className="text-gray-700">Email</span>
+            <input
+              {...register('email', { required: true })}
+              className="roudned form-input mt-1 block w-full border py-2 px-3 shadow outline-none ring-yellow-500 focus:ring"
+              placeholder="John Appleseed"
+              type="email"
+            />
+          </label>
+          <label className="mb-5 block">
+            <span className="text-gray-700">Comment</span>
+            <textarea
+              {...register('comment', { required: true })}
+              className="form-textarea mt-1 block w-full rounded border py-2 px-3 shadow outline-none ring-yellow-500 focus:ring"
+              placeholder="John Appleseed"
+              rows={8}
+            />
+          </label>
+          <div>
+            {errors.name && <p className="text-red-500">Name is required</p>}
+            {errors.email && <p className="text-red-500">Email is required</p>}
+            {errors.comment && (
+              <p className="text-red-500">Comment is required</p>
+            )}
+          </div>
+          <input
+            type="submit"
+            className="focus:shadow-outline 
+          cursor-pointer rounded bg-yellow-500 
+          py-2 px-4 font-bold text-white shadow 
+          hover:bg-yellow-400 focus:outline-none"
           />
-        </div>
-      </article>
+        </form>
+      )}
+      <Comments post={post}/>
     </main>
   )
 }
 
-export default Post
+export default Posts
 
 export const getStaticPaths = async () => {
   const query = `*[_type == 'post']{
@@ -94,10 +160,18 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
        image
   }
     ,
+  'comments': *[
+  _type == 'comment' && post._ref == ^._id && approved==true],
     description,
     mainImage,
-    body,
-  }`
+    body[]{
+      ..., 
+      asset->{
+        ...,
+        "_key": _id
+      },
+  }
+}`
 
   const post = await sanityClient.fetch(query, {
     slug: params?.slug,
@@ -112,7 +186,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     props: {
       post,
     },
-    revalidate: 60,
+    revalidate: 60 * 60,
   }
 }
 

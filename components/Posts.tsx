@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { urlFor } from '../sanity'
-import { Post } from '../typings'
+import { Post } from '../types'
 
 interface Props {
   posts: [Post]

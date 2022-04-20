@@ -3,7 +3,7 @@ import Head from 'next/head'
 import Header from '../components/Header'
 import Banner from '../components/Banner'
 import { sanityClient, urlFor } from '../sanity'
-import {Post} from '../typings'
+import {Post} from '../types'
 import Posts from '../components/Posts'
 import Link from 'next/link'
 
@@ -15,7 +15,7 @@ const Home: NextPage<Props, {} > = ({ posts }: Props) => {
   return (
     <div className="mx-auto max-w-7xl">
       <Head>
-        <title>Create Next App</title>
+        <title>Medium</title>
       </Head>
       <Header />
       <Banner />
