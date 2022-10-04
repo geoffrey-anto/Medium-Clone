@@ -16,6 +16,7 @@ const Banner = () => {
       <img
         src="https://accountabilitylab.org/wp-content/uploads/2020/03/Medium-logo.png"
         alt=""
+        className="hidden lg:block"
       />
     </div>
   )
